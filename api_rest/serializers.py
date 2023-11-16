@@ -7,6 +7,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ['id', 'nome', 'email', 'sexo', 'raca', 'pdc', 'regiao']
 
+class UsuarioSerializerRegister(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['nome', 'email', 'senha', 'sexo', 'raca', 'pdc', 'regiao']
+
 class Resultado_iaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resultado_ia

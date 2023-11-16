@@ -7,7 +7,7 @@ from rest_framework import status
 
 from .models import Usuario 
 from .models import Resultado_ia
-from .serializers import UsuarioSerializer
+from .serializers import UsuarioSerializer, UsuarioSerializerRegister
 
 import json
 # Create your views here.
@@ -51,7 +51,7 @@ def get_by_id(request, id):
 def post_create_user(request):
     if request.method == 'POST':
         new_user = request.data
-        serializer = UsuarioSerializer(data=new_user)
+        serializer = UsuarioSerializerRegister(data=new_user)
 
         if serializer.is_valid():
             serializer.save()
@@ -76,7 +76,7 @@ def put_edit_user(request, id):
         return Response(formatted_response, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'PUT':
-        serializer = UsuarioSerializer(update_user, data=request.data)
+        serializer = UsuarioSerializerRegister(update_user, data=request.data)
         if serializer.is_valid():
             serializer.save()
             formatted_response = {
