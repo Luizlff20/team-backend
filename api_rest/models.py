@@ -7,14 +7,14 @@ class Usuario(models.Model):
 
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length= 150, default="")
-    email = models.EmailField(default="")
-    senha = models.CharField(max_length=128)
+    username = models.EmailField(default="", unique=True)
+    password = models.CharField(max_length=128)
 
     def set_password(self, raw_password):
-        self.senha = make_password(raw_password)
+        self.password = make_password(raw_password)
 
     def check_password(self, raw_password):
-        return check_password(raw_password, self.senha)
+        return check_password(raw_password, self.password)
     
     SEXO_CHOICES = (
         ('M', 'Masculino'),

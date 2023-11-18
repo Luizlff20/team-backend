@@ -1,9 +1,21 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 from .models import Usuario 
 from .models import Resultado_ia
@@ -15,6 +27,7 @@ import json
 @api_view(['GET'])
 def get_users(request):
     if request.method == 'GET':
+      
         users = Usuario.objects.all()
         serializer = UsuarioSerializer(users, many=True)
         formatted_response = {
@@ -54,14 +67,23 @@ def post_create_user(request):
         serializer = UsuarioSerializerRegister(data=new_user)
 
         if serializer.is_valid():
-            serializer.save()
+            if ('password' in request.data):
+                password = make_password(request.data['password'])
+                serializer.save(password=password)
+            else:
+                serializer.save()
+
             formatted_response = {
-            'success': True,
-            'message': 'Usuário criado com sucesso.',
-            'data': serializer.data
-        }
+                'success': True,
+                'message': 'Usuário criado com sucesso.',
+                'data': serializer.data
+            }
             return Response(formatted_response, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        formatted_response = {
+            'success': False,
+            'message': 'Usuário já cadastrado.'
+        }
+        return Response(formatted_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT'])
@@ -88,6 +110,7 @@ def put_edit_user(request, id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_user(request, id):
     try:
         if request.method == 'DELETE':
@@ -100,3 +123,40 @@ def delete_user(request, id):
     
     except:
         return JsonResponse({'success': False, 'message': 'Erro interno no servidor:'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        request_body = openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties = {
+                'username' : openapi.Schema(type=openapi.TYPE_STRING, description='email usuário'),
+                'password' : openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_PASSWORD, description='senha usuário')
+            }
+        )
+
+    )
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({'error': 'Campos não preenchidos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = Usuario.objects.get(username=username)
+        if user is None:
+            return Response({'error': 'Email inválido'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not user.check_password(password):
+            return Response({'error': 'Credenciais inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'success': True,
+            'message': 'Usuário autenticado com sucesso.',
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+        }, status=status.HTTP_200_OK)
+        
