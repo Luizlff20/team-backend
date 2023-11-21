@@ -25,6 +25,7 @@ import json
 # Create your views here.
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_users(request):
     if request.method == 'GET':
       
@@ -40,6 +41,7 @@ def get_users(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_by_id(request, id):
     try: 
         user = Usuario.objects.get(pk=id)
@@ -64,14 +66,20 @@ def get_by_id(request, id):
 def post_create_user(request):
     if request.method == 'POST':
         new_user = request.data
+        email = new_user.get('email')
+        
+        # Verificar se o usuário já existe
+        if Usuario.objects.filter(email=email).exists():
+            formatted_response = {
+                'success': False,
+                'message': 'Usuário já cadastrado.'
+            }
+            return Response(formatted_response, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = UsuarioSerializerRegister(data=new_user)
 
         if serializer.is_valid():
-            if ('password' in request.data):
-                password = make_password(request.data['password'])
-                serializer.save(password=password)
-            else:
-                serializer.save()
+            serializer.save()
 
             formatted_response = {
                 'success': True,
@@ -81,12 +89,14 @@ def post_create_user(request):
             return Response(formatted_response, status=status.HTTP_201_CREATED)
         formatted_response = {
             'success': False,
-            'message': 'Usuário já cadastrado.'
+            'message': 'Erro ao criar usuário.',
+            'errors': serializer.errors
         }
         return Response(formatted_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def put_edit_user(request, id):
     try:
         update_user = Usuario.objects.get(pk=id)
@@ -110,7 +120,6 @@ def put_edit_user(request, id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
 def delete_user(request, id):
     try:
         if request.method == 'DELETE':
@@ -128,29 +137,24 @@ def delete_user(request, id):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
-    @swagger_auto_schema(
-        request_body = openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties = {
-                'username' : openapi.Schema(type=openapi.TYPE_STRING, description='email usuário'),
-                'password' : openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_PASSWORD, description='senha usuário')
-            }
-        )
-
-    )
     def post(self, request):
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        if not username or not password:
+        
+        if not email or not password:
             return Response({'error': 'Campos não preenchidos'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = Usuario.objects.get(username=username)
+        user = Usuario.objects.filter(email=email).first()
+
         if user is None:
             return Response({'error': 'Email inválido'}, status=status.HTTP_401_UNAUTHORIZED)
-        if not user.check_password(password):
+        
+        authenticated_user = authenticate(email=email, password=password)
+        
+        if not authenticated_user:
             return Response({'error': 'Credenciais inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        refresh = RefreshToken.for_user(user)
+        refresh = RefreshToken.for_user(authenticated_user)
         return Response({
             'success': True,
             'message': 'Usuário autenticado com sucesso.',
