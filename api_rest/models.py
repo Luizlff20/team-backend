@@ -38,28 +38,40 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
 
     RACA_CHOICES = (
-        ('B', 'Branca'),
-        ('P', 'Preta'),
-        ('A', 'Amarela'),
-        ('PA', 'Parda'),
-        ('I', 'Indígena'),
+        ('Branca', 'Branca'),
+        ('Preta', 'Preta'),
+        ('Amarela', 'Amarela'),
+        ('Parda', 'Parda'),
+        ('Indígena', 'Indígena'),
     )
-    raca = models.CharField(max_length=2, choices=RACA_CHOICES)
+    raca = models.CharField(max_length=8, choices=RACA_CHOICES)
 
-    PDC_CHOICES = (
-        ('S', 'Sim'),
-        ('N', 'Não'),
-    )
-    pdc = models.CharField(max_length=1, choices=PDC_CHOICES)
+    # PDC_CHOICES = (
+    #     ('S', 'Sim'),
+    #     ('N', 'Não'),
+    # )
+    # pdc = models.CharField(max_length=1, choices=PDC_CHOICES)
 
     REGIAO_CHOICES = (
-        ('N', 'Norte'),
-        ('NE', 'Nordeste'),
-        ('S', 'Sul'),
-        ('SE', 'Suldeste'),
-        ('CO', 'Centro-Oeste'),
+        ('Norte', 'Norte'),
+        ('Nordeste', 'Nordeste'),
+        ('Sul', 'Sul'),
+        ('Sudeste', 'Sudeste'),
+        ('Centro-Oeste', 'Centro-Oeste'),
     )
-    regiao = models.CharField(max_length=2, choices=REGIAO_CHOICES)
+    regiao = models.CharField(max_length=35, choices=REGIAO_CHOICES)
+
+    nome_ies = models.CharField(max_length=150, default="")
+
+    modalidade_ensino = models.CharField(max_length=150, default="")
+
+    nome_curso = models.CharField(max_length=150, default="")
+
+    nome_turno_curso = models.CharField(max_length=150, default="")
+
+    sigla_uf_beneficiario = models.CharField(max_length=2, default="")
+
+    municipio_beneficiario = models.CharField(max_length=150, default="")
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -67,10 +79,10 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     objects = UsuarioManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['nome', 'password', 'sexo', 'regiao', 'pdc', 'raca']
+    REQUIRED_FIELDS = ['nome', 'password', 'sexo', 'regiao', 'raca', 'nome_ies', 'modalidade_ensino', 'nome_curso', 'nome_turno_curso', 'sigla_uf_beneficiario', 'municipio_beneficiario']
 
 
 class Resultado_ia(models.Model):
     id = models.AutoField(primary_key=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
     resultado = models.CharField(max_length=150)

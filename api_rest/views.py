@@ -7,6 +7,8 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from ia_model.funcoes_IA import fazer_previsao
+import requests
 
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.views import APIView
@@ -19,7 +21,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 
 from .models import Usuario 
 from .models import Resultado_ia
-from .serializers import UsuarioSerializer, UsuarioSerializerRegister
+from .serializers import UsuarioSerializer, UsuarioSerializerRegister, Resultado_iaSerializer
 
 import json
 # Create your views here.
@@ -99,6 +101,7 @@ def post_create_user(request):
 @permission_classes([IsAuthenticated])
 def put_edit_user(request, id):
     try:
+        update_request = request.data
         update_user = Usuario.objects.get(pk=id)
     except Usuario.DoesNotExist:
         formatted_response = {
@@ -108,15 +111,16 @@ def put_edit_user(request, id):
         return Response(formatted_response, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'PUT':
-        serializer = UsuarioSerializerRegister(update_user, data=request.data)
+        serializer = UsuarioSerializerRegister(update_user, data=update_request, partial=True)
         if serializer.is_valid():
             serializer.save()
             formatted_response = {
-            'success': True,
-            'message': 'Usuário editado com sucesso.',
-            'data': serializer.data
-        }
+                'success': True,
+                'message': 'Usuário editado com sucesso.',
+                'data': serializer.data
+            }
             return Response(formatted_response, status=status.HTTP_202_ACCEPTED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
@@ -163,4 +167,78 @@ class LoginView(APIView):
                 'access': str(refresh.access_token),
             }
         }, status=status.HTTP_200_OK)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_result_ia_by_id(request, id):
+    try:
+        resultado = Resultado_ia.objects.get(usuario=id)
+    except:
+        formatted_response = {
+            'success': False,
+            'message': 'Resultado não localizado.'
+        }
+        return Response(formatted_response, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = Resultado_iaSerializer(resultado)
+        formatted_response = {
+            'success': True,
+            'message': 'Resultado recuperado com sucesso.',
+            'data': serializer.data
+        }
+        return Response(formatted_response, status=status.HTTP_200_OK)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def post_resultado_ia(request, id):
+    if request.method == 'POST':
+        try:
+            user = Usuario.objects.get(pk=id)
+            dados = {
+                'NOME_IES_BOLSA': [user.nome_ies],
+                'MODALIDADE_ENSINO_BOLSA': [user.modalidade_ensino],
+                'NOME_CURSO_BOLSA': [user.nome_curso],
+                'NOME_TURNO_CURSO_BOLSA': [user.nome_turno_curso],
+                'SEXO_BENEFICIARIO_BOLSA': [user.sexo],
+                'RACA_BENEFICIARIO_BOLSA': [user.raca],
+                'REGIAO_BENEFICIARIO_BOLSA': [user.regiao],
+                'SIGLA_UF_BENEFICIARIO_BOLSA': [user.sigla_uf_beneficiario],
+                'MUNICIPIO_BENEFICIARIO_BOLSA': [user.municipio_beneficiario]
+            }
+            resultado = fazer_previsao(dados)
+
+            resultado = resultado.tolist()[0]
+            
+            serializer = Resultado_iaSerializer(data={
+                'resultado': resultado,
+                'usuario': user.id
+            })
+            if serializer.is_valid():
+                serializer.save()
+
+            return JsonResponse(serializer.data) 
+        except Usuario.DoesNotExist:
+            return JsonResponse({'error': 'Usuário não encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': f'Erro interno no servidor: {str(e)}'}, status=500)
+    else:
+        return JsonResponse({'error': 'Método não permitido'}, status=405)
+    
+@api_view(['GET'])
+def consultar_cep(request, cep):
+    if request.method == 'GET':
+        url = f"https://viacep.com.br/ws/{cep}/json/"
+        response = requests.get(url)
+
+    if response.status_code == 200:
+        dados_cep = response.json()
+        return JsonResponse(dados_cep)
+    else:
+        return JsonResponse({'error': 'Erro ao obter informações do CEP'}, status=500)
+
+
+
+
+
         
