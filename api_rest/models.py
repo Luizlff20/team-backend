@@ -1,8 +1,6 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-# Create your models here.
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -45,12 +43,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         ('Indígena', 'Indígena'),
     )
     raca = models.CharField(max_length=8, choices=RACA_CHOICES)
-
-    # PDC_CHOICES = (
-    #     ('S', 'Sim'),
-    #     ('N', 'Não'),
-    # )
-    # pdc = models.CharField(max_length=1, choices=PDC_CHOICES)
 
     REGIAO_CHOICES = (
         ('Norte', 'Norte'),

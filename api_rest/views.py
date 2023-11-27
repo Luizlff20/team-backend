@@ -1,8 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -13,18 +10,14 @@ import requests
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 from .models import Usuario 
 from .models import Resultado_ia
 from .serializers import UsuarioSerializer, UsuarioSerializerRegister, Resultado_iaSerializer
 
 import json
-# Create your views here.
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -70,7 +63,6 @@ def post_create_user(request):
         new_user = request.data
         email = new_user.get('email')
         
-        # Verificar se o usuário já existe
         if Usuario.objects.filter(email=email).exists():
             formatted_response = {
                 'success': False,
