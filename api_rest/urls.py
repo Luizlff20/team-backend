@@ -3,12 +3,13 @@ from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from . import views
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Nome da sua API",
+        title="API RESTFULL PROUNI",
         default_version='v1',
-        description="Descrição da sua API",
+        description="Esta API oferece funcionalidades de CRUD (Create, Read, Update, Delete) para gerenciar recursos específicos, requerendo autenticação para operações sensíveis. Os métodos disponíveis permitem interações seguras com os dados por meio de endpoints bem definidos. Para acessar endpoints protegidos, é necessário autenticar-se utilizando um token de autenticação válido.",
         terms_of_service="https://www.seusite.com/terms/",
         contact=openapi.Contact(email="contato@seusite.com"),
         license=openapi.License(name="MIT License"),
@@ -16,8 +17,6 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-
-from . import views
 
 urlpatterns = [
     path('user/', views.get_users, name='get_all_users'),

@@ -116,6 +116,7 @@ def put_edit_user(request, id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_user(request, id):
     try:
         if request.method == 'DELETE':
