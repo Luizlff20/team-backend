@@ -7,7 +7,7 @@ from . import views
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="API RESTFULL PROUNI",
+        title="DOCUMENTAÇÃO API PROUNI",
         default_version='v1',
         description="Esta API oferece funcionalidades de CRUD (Create, Read, Update, Delete) para gerenciar recursos específicos, requerendo autenticação para operações sensíveis. Os métodos disponíveis permitem interações seguras com os dados por meio de endpoints bem definidos. Para acessar endpoints protegidos, é necessário autenticar-se utilizando um token de autenticação válido.",
         terms_of_service="https://www.seusite.com/terms/",

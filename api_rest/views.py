@@ -12,6 +12,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from django.utils.decorators import method_decorator
+
 
 from .models import Usuario 
 from .models import Resultado_ia
@@ -19,11 +23,18 @@ from .serializers import UsuarioSerializer, UsuarioSerializerRegister, Resultado
 
 import json
 
+@swagger_auto_schema(
+    method='get',
+    tags=["Usuário"],
+    operation_summary='Lista de usuários',
+    operation_description='Este endpoint serve para recuperar uma lista de usuários.',
+    responses={200: openapi.Response('Success',), 400: openapi.Response('Bad request')},
+    
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_users(request):
     if request.method == 'GET':
-      
         users = Usuario.objects.all()
         serializer = UsuarioSerializer(users, many=True)
         formatted_response = {
@@ -34,7 +45,13 @@ def get_users(request):
         return Response(formatted_response, status=status.HTTP_200_OK)
     return Response({'error': 'Requisição inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-
+@swagger_auto_schema(
+    method='get',
+    tags=["Usuário"],
+    operation_summary='Buscar usuário por id',
+    operation_description='Este endpoint serve para recuperar o usuário por seu id.',
+    responses={200: openapi.Response('Success',), 404: openapi.Response('Not found')},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_by_id(request, id):
@@ -56,7 +73,31 @@ def get_by_id(request, id):
         }
         return Response(formatted_response, status=status.HTTP_200_OK)
     
-
+@swagger_auto_schema(
+    method='post',
+    tags=["Usuário"],
+    operation_summary='Cadastrar usuário',
+    operation_description='Este endpoint trata da criação de um novo usuário',
+    responses={201: openapi.Response('Created'), 400: openapi.Response('Bad request')},
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['nome', 'email', 'password', 'sexo', 'raca', 'regiao', 'nome_ies', 'modalidade_ensino', 'nome_curso', 'nome_turno_curso', 'sigla_uf_beneficiario', 'municipio_beneficiario', 'is_active', 'is_staff'],
+        properties={
+            'nome': openapi.Schema(type=openapi.TYPE_STRING),
+            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+            'password': openapi.Schema(type=openapi.TYPE_STRING),
+            'sexo': openapi.Schema(type=openapi.TYPE_STRING),
+            'raca': openapi.Schema(type=openapi.TYPE_STRING),
+            'regiao': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_ies': openapi.Schema(type=openapi.TYPE_STRING),
+            'modalidade_ensino': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_curso': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_turno_curso': openapi.Schema(type=openapi.TYPE_STRING),
+            'sigla_uf_beneficiario': openapi.Schema(type=openapi.TYPE_STRING),
+            'municipio_beneficiario': openapi.Schema(type=openapi.TYPE_STRING)
+        },
+    ),
+)
 @api_view(['POST'])
 def post_create_user(request):
     if request.method == 'POST':
@@ -88,6 +129,31 @@ def post_create_user(request):
         }
         return Response(formatted_response, status=status.HTTP_400_BAD_REQUEST)
 
+@swagger_auto_schema(
+    method='put',
+    tags=["Usuário"],
+    operation_summary='Atualizar usuário por id',
+    operation_description='Este endpoint trata da atualização dos dados de um usuário',
+    responses={202: openapi.Response('Accepted'), 400: openapi.Response('Bad request')},
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['nome', 'email', 'password', 'sexo', 'raca', 'regiao', 'nome_ies', 'modalidade_ensino', 'nome_curso', 'nome_turno_curso', 'sigla_uf_beneficiario', 'municipio_beneficiario', 'is_active', 'is_staff'],
+        properties={
+            'nome': openapi.Schema(type=openapi.TYPE_STRING),
+            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+            'password': openapi.Schema(type=openapi.TYPE_STRING),
+            'sexo': openapi.Schema(type=openapi.TYPE_STRING),
+            'raca': openapi.Schema(type=openapi.TYPE_STRING),
+            'regiao': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_ies': openapi.Schema(type=openapi.TYPE_STRING),
+            'modalidade_ensino': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_curso': openapi.Schema(type=openapi.TYPE_STRING),
+            'nome_turno_curso': openapi.Schema(type=openapi.TYPE_STRING),
+            'sigla_uf_beneficiario': openapi.Schema(type=openapi.TYPE_STRING),
+            'municipio_beneficiario': openapi.Schema(type=openapi.TYPE_STRING)
+        },
+    ),
+)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -115,6 +181,15 @@ def put_edit_user(request, id):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@swagger_auto_schema(
+    method='delete',
+    tags=["Usuário"],
+    operation_summary='Deletar usuário por id',
+    operation_description='Este endpoint trata da exclusão de um usuário',
+    responses={200: openapi.Response('Sucess'), 404: openapi.Response('Not found')},
+    
+)
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_user(request, id):
@@ -130,6 +205,21 @@ def delete_user(request, id):
     except:
         return JsonResponse({'success': False, 'message': 'Erro interno no servidor:'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@method_decorator(name='post', decorator=swagger_auto_schema(
+        operation_summary='Fazer login',
+        tags=["Login"],
+        operation_description='Este endpoint trata do login do usuário no sistema',
+        responses={200: 'Sucesso', 401: 'Não autorizado', 400: 'Requisição inválida'},
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['email', 'password'],
+            properties={
+                'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                'password': openapi.Schema(type=openapi.TYPE_STRING)
+            },
+        )
+    ))
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -162,6 +252,15 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
     
 
+@swagger_auto_schema(
+    method='get',
+    tags=["Usuário"],
+    operation_summary='Buscar resultado por id',
+    operation_description='Este endpoint serve para recuperar o resultado do usuário por seu id.',
+    responses={200: openapi.Response('Success',), 404: openapi.Response('Not found')},
+    
+)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_result_ia_by_id(request, id):
@@ -182,6 +281,15 @@ def get_result_ia_by_id(request, id):
         }
         return Response(formatted_response, status=status.HTTP_200_OK)
     
+
+@swagger_auto_schema(
+    method='post',
+    tags=["Usuário"],
+    operation_summary='Gerar resultado por id',
+    operation_description='Este endpoint serve para gerar o resultado do usuário por seu id.',
+    responses={200: openapi.Response('Success',), 404: openapi.Response('Not found')},
+    
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def post_resultado_ia(request, id):
@@ -210,7 +318,7 @@ def post_resultado_ia(request, id):
             if serializer.is_valid():
                 serializer.save()
 
-            return JsonResponse(serializer.data) 
+            return JsonResponse(serializer.data, status=status.HTTP_200_OK) 
         except Usuario.DoesNotExist:
             return JsonResponse({'error': 'Usuário não encontrado'}, status=404)
         except Exception as e:
@@ -218,6 +326,15 @@ def post_resultado_ia(request, id):
     else:
         return JsonResponse({'error': 'Método não permitido'}, status=405)
     
+
+@swagger_auto_schema(
+    method='get',
+    tags=["Buscar CEP"],
+    operation_summary='Buscar os dados através do CEP',
+    operation_description='Este endpoint serve para recuperar as informações de CEP.',
+    responses={200: openapi.Response('Success',), 500: openapi.Response('Internal server error')},
+    
+)
 @api_view(['GET'])
 def consultar_cep(request, cep):
     if request.method == 'GET':
