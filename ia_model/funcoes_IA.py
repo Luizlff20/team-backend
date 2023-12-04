@@ -4,7 +4,7 @@ import pickle
 
 app = Flask(__name__)
 
-with open('ia_model\\modelo_catboost.pkl', 'rb') as file:
+with open('ia_model\\modelo_IA_catboost.pkl', 'rb') as file:
     model = pickle.load(file)
 
 def fazer_previsao(dados):
